@@ -1,8 +1,6 @@
-import 'package:crud_app/api_service.dart';
 import 'package:flutter/material.dart';
-
+import 'package:crud_app/api_service.dart';
 import '../models/product.dart';
-
 
 class EditProductScreen extends StatefulWidget {
   final Product product;
@@ -15,45 +13,56 @@ class EditProductScreen extends StatefulWidget {
 
 class _EditProductScreenState extends State<EditProductScreen> {
   final _formKey = GlobalKey<FormState>();
-  final productNameController = TextEditingController();
-  final productCodeController = TextEditingController();
-  final qtyController = TextEditingController();
-  final unitPriceController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _codeController = TextEditingController();
+  final _quantityController = TextEditingController();
+  final _unitPriceController = TextEditingController();
   late ApiService apiService;
 
   @override
   void initState() {
     super.initState();
     apiService = ApiService();
-    productNameController.text = widget.product.name;
-    productCodeController.text = widget.product.code;
-    qtyController.text = widget.product.quantity.toString();
-    unitPriceController.text = widget.product.unitPrice.toString();
+
+    // Initialize the text controllers with the current product details
+    _nameController.text = widget.product.name;
+    _codeController.text = widget.product.code;
+    _quantityController.text = widget.product.quantity.toString();
+    _unitPriceController.text = widget.product.unitPrice.toString();
   }
 
   @override
   void dispose() {
-    productNameController.dispose();
-    productCodeController.dispose();
-    qtyController.dispose();
-    unitPriceController.dispose();
+    _nameController.dispose();
+    _codeController.dispose();
+    _quantityController.dispose();
+    _unitPriceController.dispose();
     super.dispose();
   }
 
-  void _submit() {
+  void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      final updatedProduct = Product(
-        id: widget.product.id,
-        name: productNameController.text,
-        code: productCodeController.text,
-        quantity: int.parse(qtyController.text),
-        unitPrice: double.parse(unitPriceController.text),
+      // Create an updated product instance
+      final Product updatedProduct = Product(
+        id: widget.product.id, // Retain the product ID
+        name: _nameController.text,
+        code: _codeController.text,
+        quantity: int.parse(_quantityController.text),
+        unitPrice: double.parse(_unitPriceController.text),
       );
 
-      apiService.updateProduct(widget.product.id, updatedProduct).then((_) {
-        Navigator.pop(context);
+      // Call the API to update the product, passing both the id and updated product
+      apiService.updateProduct(widget.product.id, updatedProduct).then((value) {
+        // Show a success message
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Product updated successfully!'))
+        );
+        Navigator.pop(context); // Go back to the product list screen
       }).catchError((error) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $error")));
+        // Handle any errors by showing a message
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to update product: $error'))
+        );
       });
     }
   }
@@ -63,13 +72,13 @@ class _EditProductScreenState extends State<EditProductScreen> {
     return Scaffold(
       appBar: AppBar(title: Text('Edit Product')),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
               TextFormField(
-                controller: productNameController,
+                controller: _nameController,
                 decoration: InputDecoration(labelText: 'Product Name'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -79,7 +88,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                 },
               ),
               TextFormField(
-                controller: productCodeController,
+                controller: _codeController,
                 decoration: InputDecoration(labelText: 'Product Code'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -89,28 +98,36 @@ class _EditProductScreenState extends State<EditProductScreen> {
                 },
               ),
               TextFormField(
-                controller: qtyController,
+                controller: _quantityController,
                 decoration: InputDecoration(labelText: 'Quantity'),
+                keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter quantity';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Please enter a valid number';
                   }
                   return null;
                 },
               ),
               TextFormField(
-                controller: unitPriceController,
+                controller: _unitPriceController,
                 decoration: InputDecoration(labelText: 'Unit Price'),
+                keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter unit price';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Please enter a valid price';
                   }
                   return null;
                 },
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _submit,
+                onPressed: _submitForm,
                 child: Text('Update Product'),
               ),
             ],
